@@ -3,7 +3,8 @@
 	"package": "com.kevin2holt.vanillaextras.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
-		"BeaconScreenMixin"
+		"BeaconScreenMixin",
+		"MultiPlayerGameModeMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

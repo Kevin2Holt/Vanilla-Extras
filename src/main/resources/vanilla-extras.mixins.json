@@ -3,7 +3,8 @@
 	"package": "com.kevin2holt.vanillaextras.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"BeaconBlockEntityMixin"
+		"BeaconBlockEntityMixin",
+		"ServerPlayerGameModeMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
