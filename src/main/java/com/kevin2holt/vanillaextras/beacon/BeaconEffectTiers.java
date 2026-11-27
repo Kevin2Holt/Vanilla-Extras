@@ -6,26 +6,26 @@ import net.minecraft.world.effect.MobEffects;
 
 import java.util.List;
 
-// Builds the beacon's effect list (one inner list per pyramid tier, matching
+// Builds the beacon screen's effect list (one inner list per pyramid tier, matching
 // BeaconBlockEntity.BEACON_EFFECTS). Tier 4 only lists the extra secondary effects; vanilla adds
-// the "primary II" upgrade on its own, so Saturation as primary gives Regeneration or Saturation II.
+// the "primary II" upgrade on its own. On a saturation pyramid, Saturation replaces Regeneration.
 public final class BeaconEffectTiers {
 
 	private BeaconEffectTiers() {
 	}
 
 
-	public static List<List<Holder<MobEffect>>> buildEffectTiers(boolean isSaturationIncluded) {
+	public static List<List<Holder<MobEffect>>> buildEffectTiers(boolean isSaturationOffered) {
 
-		List<Holder<MobEffect>> tierThreeEffects = isSaturationIncluded
-			? List.of(MobEffects.STRENGTH, MobEffects.SATURATION)
-			: List.of(MobEffects.STRENGTH);
+		List<Holder<MobEffect>> tierFourEffects = isSaturationOffered
+			? List.of(MobEffects.SATURATION)
+			: List.of(MobEffects.REGENERATION);
 
 		return List.of(
 			List.of(MobEffects.SPEED, MobEffects.HASTE),
 			List.of(MobEffects.RESISTANCE, MobEffects.JUMP_BOOST),
-			tierThreeEffects,
-			List.of(MobEffects.REGENERATION)
+			List.of(MobEffects.STRENGTH),
+			tierFourEffects
 		);
 	}
 }

@@ -39,7 +39,7 @@ Each feature must be switchable on and off in `config/vanilla-extras.json`. The 
 
 Declare each feature once in `ModFeatures` (package `com.kevin2holt.vanillaextras.feature`) and check it with `ModFeatures.<FEATURE>.isEnabled()`. The config loads lazily, so it is safe to call from mixins that run during class initialization. Missing keys are written back with their default; a file that fails to parse is left untouched and defaults are used.
 
-Mark a feature `isRestartRequired` (4th `Feature` argument) when it is wired up once at startup, like the beacon effect list. Its `isEnabled()` keeps the value it had on first read, so the game never runs half-switched; `isEnabledInConfig()` returns the saved value. Other features are live: check `isEnabled()` at the point of use and a change takes effect immediately. Hand-editing the file while the game runs is not picked up; use the in-game menu or restart.
+Mark a feature `isRestartRequired` (4th `Feature` argument) when it is wired up once at startup (e.g. a value baked into a vanilla class's static initializer). Its `isEnabled()` keeps the value it had on first read, so the game never runs half-switched; `isEnabledInConfig()` returns the saved value. Other features are live: check `isEnabled()` at the point of use and a change takes effect immediately. Hand-editing the file while the game runs is not picked up; use the in-game menu or restart.
 
 Feature options (sliders, extra switches) go under `"settings"`, keyed by feature, through `IntSetting` and `BooleanSetting` in `com.kevin2holt.vanillaextras.config`. Their `get()` reads memory, so it is cheap enough to call every tick.
 
@@ -69,7 +69,7 @@ SettingsMenu.registerPage(Component.literal("Auto-Refill"), page -> {
 
 Feature names on the toggles screen come from the lang key `vanilla-extras.feature.<configKey>`, falling back to the config key split into words. Toggling a feature from the menu saves the file and, for client-synced features, re-sends the enabled list to modded players on the running integrated server. On a remote server the toggles still edit the client's own file, and the screen says so.
 
-The server's config decides. When a feature changes what a modded client shows (like a new beacon button), mark it `isSyncedToClient` in `ModFeatures`; the server sends its enabled synced features to modded clients on join, and the client only shows the extra option when the server has it on. A modded client's own toggle only matters in singleplayer and LAN hosting.
+The server's config decides. When a feature changes what a modded client shows (like a new beacon button), mark it `isSyncedToClient` in `ModFeatures`; the server sends its enabled synced features to modded clients on join, and the client only shows the extra option when the server has it on. When the option depends on the specific block or screen (like the saturation beacon, which depends on the pyramid), send a small payload to modded clients as that screen opens instead. A modded client's own toggle only matters in singleplayer and LAN hosting.
 
 ## Auto-refill
 

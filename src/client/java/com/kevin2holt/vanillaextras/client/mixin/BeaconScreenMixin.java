@@ -1,8 +1,7 @@
 package com.kevin2holt.vanillaextras.client.mixin;
 
 import com.kevin2holt.vanillaextras.beacon.BeaconEffectTiers;
-import com.kevin2holt.vanillaextras.client.ServerFeatures;
-import com.kevin2holt.vanillaextras.feature.ModFeatures;
+import com.kevin2holt.vanillaextras.client.beacon.BeaconScreenOptions;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.client.gui.screens.inventory.BeaconScreen;
 import net.minecraft.core.Holder;
@@ -12,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.List;
 
-// Builds the beacon buttons from what the connected server allows, not from this client's
-// own config. Picking Saturation on a server that doesn't allow it fails the server's check
-// and disconnects the player, so the button only shows when the server announced the feature.
+// Builds the beacon buttons from what the server said about this beacon. Saturation replaces
+// Regeneration only when the server reported a diamond/netherite pyramid; anywhere else the
+// screen matches vanilla, so a pick can never fail the server's check and kick the player.
 @Mixin(BeaconScreen.class)
 public abstract class BeaconScreenMixin {
 
@@ -24,6 +23,6 @@ public abstract class BeaconScreenMixin {
 	)
 	private List<List<Holder<MobEffect>>> useServerBeaconEffects(List<List<Holder<MobEffect>>> localBeaconEffects) {
 
-		return BeaconEffectTiers.buildEffectTiers(ServerFeatures.isEnabledOnServer(ModFeatures.SATURATION_BEACON));
+		return BeaconEffectTiers.buildEffectTiers(BeaconScreenOptions.isSaturationOffered());
 	}
 }
