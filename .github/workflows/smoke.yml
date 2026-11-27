@@ -1,0 +1,46 @@
+name: Server smoke tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      # The smoke tests live outside src/ so they never ship in the mod jar
+      - name: Add smoke tests to the build
+        run: |
+          mkdir -p src/main/java/com/kevin2holt/vanillaextras/smoke
+          cp .github/smoke/*.java src/main/java/com/kevin2holt/vanillaextras/smoke/
+          python3 - <<'PY'
+          import json
+          path = 'src/main/resources/fabric.mod.json'
+          with open(path) as modJsonFile:
+              modJson = json.load(modJsonFile)
+          modJson['entrypoints']['main'].append('com.kevin2holt.vanillaextras.smoke.BeaconSmokeTests')
+          with open(path, 'w') as modJsonFile:
+              json.dump(modJson, modJsonFile, indent='\t')
+          PY
+
+      - name: Run dedicated server
+        run: |
+          mkdir -p run && echo "eula=true" > run/eula.txt
+          printf 'online-mode=false\n' > run/server.properties
+          timeout 900 ./gradlew runServer --args="nogui" 2>&1 | tee server.log || true
+          grep 'SMOKE' server.log || true
+          grep -q 'SMOKE DONE all passed' server.log
