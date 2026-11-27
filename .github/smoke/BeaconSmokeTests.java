@@ -27,9 +27,29 @@ public class BeaconSmokeTests implements ModInitializer {
 	@Override
 	public void onInitialize() {
 
+		ServerLifecycleEvents.SERVER_STARTED.register(server -> loadMixinTargets());
 		ServerLifecycleEvents.SERVER_STARTED.register(this::runAllTests);
 	}
 
+
+
+	// Loads classes players normally load first, so a broken mixin target fails here instead of in game
+	private void loadMixinTargets() {
+
+		String[] targetClassNames = {
+			"net.minecraft.world.inventory.BeaconMenu",
+			"net.minecraft.server.network.ServerGamePacketListenerImpl"
+		};
+
+		for (String targetClassName : targetClassNames) {
+			try {
+				Class.forName(targetClassName);
+				report("loaded " + targetClassName, true, "", "");
+			} catch (ClassNotFoundException | LinkageError exception) {
+				report("loaded " + targetClassName, false, "class loads", exception.toString());
+			}
+		}
+	}
 
 
 	private void runAllTests(MinecraftServer server) {
