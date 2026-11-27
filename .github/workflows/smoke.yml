@@ -22,7 +22,7 @@ jobs:
       - name: Run dedicated server and build a test pyramid
         run: |
           mkdir -p run && echo "eula=true" > run/eula.txt
-          printf 'level-type=minecraft\\:flat\nonline-mode=false\n' > run/server.properties
+          printf 'level-type=minecraft\\:flat\nonline-mode=false\npause-when-empty-seconds=-1\n' > run/server.properties
           (
             sleep 150
             echo "forceload add 0 0"
