@@ -8,11 +8,19 @@ import net.minecraft.core.Holder;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.inventory.BeaconMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 
 // CI-only checks, run on a dedicated server by .github/workflows/smoke.yml. Builds beacon bases
 // out of real blocks and checks which healing-slot effect and icon the mod picks for each.
@@ -88,10 +96,45 @@ public class BeaconSmokeTests implements ModInitializer {
 		clearBase(level);
 		expectIcon(level, "no base shows Regeneration", 0, false);
 
+		runReselectionTests();
+
 		LOGGER.info(this.failureCount == 0 ? "SMOKE DONE all passed" : "SMOKE DONE with " + this.failureCount + " failure(s)");
 		server.halt(false);
 	}
 
+
+
+	// A beacon set to Speed + Regeneration whose base then shrank below 4 layers
+	private void runReselectionTests() {
+
+		BeaconMenu shrunkBeaconMenu = makeBeaconMenu(2, MobEffects.SPEED, MobEffects.REGENERATION);
+		boolean isAccepted = shrunkBeaconMenu.updateEffects(Optional.of(MobEffects.HASTE), Optional.of(MobEffects.REGENERATION));
+		report("shrunk base: new primary with stale secondary accepted", isAccepted, "true", String.valueOf(isAccepted));
+		report("shrunk base: primary set to Haste", MobEffects.HASTE.equals(shrunkBeaconMenu.getPrimaryEffect()), "haste", String.valueOf(shrunkBeaconMenu.getPrimaryEffect()));
+		report("shrunk base: stale secondary cleared", shrunkBeaconMenu.getSecondaryEffect() == null, "none", String.valueOf(shrunkBeaconMenu.getSecondaryEffect()));
+		report("shrunk base: payment taken", !shrunkBeaconMenu.hasPayment(), "taken", "still in slot");
+
+		BeaconMenu tooHighMenu = makeBeaconMenu(2, MobEffects.SPEED, null);
+		boolean isTooHighAccepted = tooHighMenu.updateEffects(Optional.of(MobEffects.STRENGTH), Optional.empty());
+		report("shrunk base: tier-3 primary still rejected", !isTooHighAccepted, "false", String.valueOf(isTooHighAccepted));
+
+		BeaconMenu fullBeaconMenu = makeBeaconMenu(4, MobEffects.SPEED, null);
+		boolean isFullAccepted = fullBeaconMenu.updateEffects(Optional.of(MobEffects.SPEED), Optional.of(MobEffects.SATURATION));
+		report("full base: Saturation secondary accepted and kept", isFullAccepted && MobEffects.SATURATION.equals(fullBeaconMenu.getSecondaryEffect()), "saturation", String.valueOf(fullBeaconMenu.getSecondaryEffect()));
+	}
+
+
+	private static BeaconMenu makeBeaconMenu(int levels, Holder<MobEffect> primary, Holder<MobEffect> secondary) {
+
+		SimpleContainerData beaconData = new SimpleContainerData(3);
+		beaconData.set(0, levels);
+		beaconData.set(1, BeaconMenu.encodeEffect(primary));
+		beaconData.set(2, BeaconMenu.encodeEffect(secondary));
+
+		BeaconMenu menu = new BeaconMenu(0, new SimpleContainer(41), beaconData, ContainerLevelAccess.NULL);
+		menu.getSlot(0).set(new ItemStack(Items.DIAMOND));
+		return menu;
+	}
 
 
 	private static void buildBase(ServerLevel level, int layerCount, Block evenLayerBlock, Block oddLayerBlock) {
