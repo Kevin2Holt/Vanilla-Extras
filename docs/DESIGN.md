@@ -31,7 +31,8 @@ Each feature must be switchable on and off in `config/vanilla-extras.json`. The 
 ```json
 {
   "features": {
-    "saturationBeacon": true
+    "saturationBeacon": true,
+    "pickaxeTorches": true
   }
 }
 ```

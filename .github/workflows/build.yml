@@ -35,3 +35,12 @@ jobs:
             build/libs/*.jar
             !build/libs/*-sources.jar
           if-no-files-found: error
+
+      - name: TEMP dump Minecraft signatures
+        if: always()
+        run: |
+          find ~/.gradle .gradle -name '*.jar' 2>/dev/null | grep -i minecraft | grep -vi sources | head -20
+          for jar in $(find ~/.gradle .gradle -name '*.jar' 2>/dev/null | grep -iE 'minecraft-(common|clientOnly|merged)' | grep -vi sources); do
+            echo "=== $jar"
+            javap -cp "$jar" -p net.minecraft.server.level.ServerPlayerGameMode net.minecraft.client.multiplayer.MultiPlayerGameMode net.minecraft.world.item.BlockItem net.minecraft.world.item.context.BlockPlaceContext net.minecraft.network.protocol.game.ClientboundSoundPacket 2>&1 | grep -iE 'class|useItemOn|performUseItemOn|place|BlockPlaceContext\(|ClientboundSoundPacket\(' || true
+          done
