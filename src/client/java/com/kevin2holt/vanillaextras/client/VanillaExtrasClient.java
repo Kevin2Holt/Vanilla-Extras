@@ -1,5 +1,6 @@
 package com.kevin2holt.vanillaextras.client;
 
+import com.kevin2holt.vanillaextras.client.beacon.BeaconScreenOptions;
 import com.kevin2holt.vanillaextras.client.refill.AutoRefillClient;
 import com.kevin2holt.vanillaextras.client.refill.AutoRefillSettingsPage;
 import com.kevin2holt.vanillaextras.client.torch.PickaxeTorchSettingsPage;
@@ -15,5 +16,6 @@ public class VanillaExtrasClient implements ClientModInitializer {
 		AutoRefillClient.register();
 		AutoRefillSettingsPage.register();
 		PickaxeTorchSettingsPage.register();
+		BeaconScreenOptions.register();
 	}
 }

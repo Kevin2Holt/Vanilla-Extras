@@ -1,0 +1,42 @@
+name: Temporary server smoke test
+
+on:
+  push:
+    paths:
+      - '.github/workflows/smoke.yml'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run dedicated server and build a test pyramid
+        run: |
+          mkdir -p run && echo "eula=true" > run/eula.txt
+          printf 'level-type=minecraft\\:flat\nonline-mode=false\n' > run/server.properties
+          (
+            sleep 150
+            echo "forceload add 0 0"
+            sleep 5
+            echo "fill -4 -60 -4 4 -60 4 minecraft:diamond_block"
+            echo "fill -3 -59 -3 3 -59 3 minecraft:netherite_block"
+            echo "fill -2 -58 -2 2 -58 2 minecraft:diamond_block"
+            echo "fill -1 -57 -1 1 -57 1 minecraft:diamond_block"
+            echo "setblock 0 -56 0 minecraft:beacon{primary_effect:\"minecraft:haste\",secondary_effect:\"minecraft:saturation\"}"
+            echo "summon minecraft:armor_stand 0 -55 0"
+            sleep 15
+            echo "data get block 0 -56 0"
+            sleep 2
+            echo "setblock 4 -60 4 minecraft:iron_block"
+            sleep 2
+            echo "data get block 0 -56 0"
+            sleep 5
+            echo stop
+          ) | timeout 600 ./gradlew runServer --args="nogui" 2>&1 | tee server.log || true
+          echo "===== SMOKE"; grep -n 'Mixin\|mixin\|ERROR\|Exception\|Done (\|beacon\|Beacon\|block data\|Changed\|filled\|Successfully' server.log | head -60

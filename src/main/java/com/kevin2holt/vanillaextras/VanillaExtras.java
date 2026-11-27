@@ -1,5 +1,6 @@
 package com.kevin2holt.vanillaextras;
 
+import com.kevin2holt.vanillaextras.beacon.SaturationBeacon;
 import com.kevin2holt.vanillaextras.feature.ModFeatures;
 import com.kevin2holt.vanillaextras.network.FeatureSync;
 import com.kevin2holt.vanillaextras.refill.AutoRefill;
@@ -17,6 +18,7 @@ public class VanillaExtras implements ModInitializer {
 		ModFeatures.loadAllToggles();
 		FeatureSync.register();
 		AutoRefill.register();
+		SaturationBeacon.register();
 
 		LOGGER.info("Vanilla Extras initialized");
 	}
