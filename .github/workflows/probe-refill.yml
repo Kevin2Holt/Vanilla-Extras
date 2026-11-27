@@ -20,9 +20,8 @@ jobs:
         run: |
           set +e
           CP=$(find ~/.gradle/caches -name '*.jar' | grep -iE 'fabric-loom.*minecraft|fabric-networking|fabric-lifecycle|fabric-api-base' | tr '\n' ':')
-          for C in net.minecraft.world.item.component.ItemContainerContents net.minecraft.world.item.component.BundleContents 'net.minecraft.world.item.component.BundleContents$Mutable' net.minecraft.world.entity.player.Inventory net.minecraft.world.inventory.PlayerEnderChestContainer net.minecraft.world.SimpleContainer net.minecraft.world.level.block.ShulkerBoxBlock net.minecraft.world.item.ItemStack net.minecraft.core.component.DataComponents net.minecraft.world.item.Items net.minecraft.world.item.BundleItem net.minecraft.world.entity.player.Player net.minecraft.client.player.LocalPlayer net.minecraft.client.Minecraft net.minecraft.world.InteractionHand net.minecraft.network.codec.ByteBufCodecs net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking 'net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking$Context' net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents net.minecraft.world.level.block.Block net.minecraft.world.item.BlockItem net.minecraft.core.NonNullList net.minecraft.world.inventory.InventoryMenu net.minecraft.world.inventory.AbstractContainerMenu; do
-            echo "=== $C"; javap -cp "$CP" "$C" | grep -vE '^\s*(public static final net.minecraft.world.item.Item [A-Z_]+;)$' | head -250; done
-          echo "=== Items shulker/bundle/ender"
-          javap -cp "$CP" net.minecraft.world.item.Items | grep -iE 'SHULKER_BOX|BUNDLE|ENDER_CHEST'
-          echo "=== DataComponents container"
-          javap -cp "$CP" net.minecraft.core.component.DataComponents | grep -iE 'CONTAINER|BUNDLE'
+          for C in net.minecraft.world.item.ItemInstance net.minecraft.world.item.ItemStackTemplate net.minecraft.world.item.component.ContainerComponent net.minecraft.core.component.DataComponentHolder net.minecraft.core.component.DataComponentGetter; do
+            echo "=== $C"; javap -cp "$CP" "$C"; done
+          echo "=== Minecraft screen"
+          javap -p -cp "$CP" net.minecraft.client.Minecraft | grep -iE 'screen|Gui '
+          javap -cp "$CP" net.minecraft.client.gui.Gui | grep -iE 'screen'
