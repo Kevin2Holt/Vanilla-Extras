@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "vanilla-extras",
+	"version": "${version}",
+	"name": "Vanilla Extras",
+	"description": "Vanilla-style additions to Minecraft.",
+	"authors": [
+		"Kevin2Holt"
+	],
+	"contact": {
+		"sources": "https://github.com/Kevin2Holt/Vanilla-Extras"
+	},
+	"license": "All-Rights-Reserved",
+	"icon": "assets/vanilla-extras/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.kevin2holt.vanillaextras.VanillaExtras"
+		],
+		"client": [
+			"com.kevin2holt.vanillaextras.client.VanillaExtrasClient"
+		]
+	},
+	"mixins": [
+		"vanilla-extras.mixins.json",
+		{
+			"config": "vanilla-extras.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
