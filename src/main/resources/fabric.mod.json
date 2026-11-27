@@ -19,6 +19,9 @@
 		],
 		"client": [
 			"com.kevin2holt.vanillaextras.client.VanillaExtrasClient"
+		],
+		"modmenu": [
+			"com.kevin2holt.vanillaextras.client.compat.ModMenuIntegration"
 		]
 	},
 	"mixins": [
@@ -33,5 +36,8 @@
 		"minecraft": "~26.3",
 		"java": ">=25",
 		"fabric-api": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
 	}
 }

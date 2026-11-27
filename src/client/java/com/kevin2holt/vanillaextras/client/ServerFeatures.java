@@ -1,7 +1,9 @@
 package com.kevin2holt.vanillaextras.client;
 
+import com.kevin2holt.vanillaextras.config.BooleanSetting;
 import com.kevin2holt.vanillaextras.feature.Feature;
 import com.kevin2holt.vanillaextras.network.EnabledFeaturesPayload;
+import com.kevin2holt.vanillaextras.network.FeatureSync;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
@@ -26,6 +28,12 @@ public final class ServerFeatures {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
 			enabledFeatureKeys = Set.of();
 		});
+	}
+
+
+	public static boolean isEnabledOnServer(BooleanSetting setting) {
+
+		return enabledFeatureKeys.contains(FeatureSync.getSyncKey(setting));
 	}
 
 
