@@ -1,6 +1,8 @@
 package com.kevin2holt.vanillaextras.torch;
 
 import com.kevin2holt.vanillaextras.VanillaExtras;
+import com.kevin2holt.vanillaextras.inventory.CarriedItemSearch;
+import com.kevin2holt.vanillaextras.inventory.ItemSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -25,7 +27,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 // Right-clicking a block with a pickaxe places a torch from the player's inventory, exactly as
-// if the torch had been held. Called only after vanilla found nothing else to do with the click
+// if the torch had been held. With the fromContainers setting on, a player with no loose torches
+// can also place one from a shulker box, bundle, or ender chest (see CarriedItemSearch). Called only after vanilla found nothing else to do with the click
 // (no block interaction such as opening a chest, no item use-on-block), on both the server and a
 // modded client (where it is the usual client-side placement prediction).
 public final class PickaxeTorchPlacement {
@@ -54,8 +57,10 @@ public final class PickaxeTorchPlacement {
 
 
 
-	// Places a torch and returns the placement result, or PASS when this click is not a pickaxe torch placement
-	public static InteractionResult tryPlaceTorch(Player player, InteractionHand hand, BlockHitResult hitResult) {
+	// Places a torch and returns the placement result, or PASS when this click is not a pickaxe torch placement.
+	// isFromContainersAllowed: when no loose torch is carried, also look in shulker boxes, bundles, and the
+	// ender chest (server only; a client cannot see the ender chest).
+	public static InteractionResult tryPlaceTorch(Player player, InteractionHand hand, BlockHitResult hitResult, boolean isFromContainersAllowed) {
 
 		if (hand != InteractionHand.MAIN_HAND || player.isSpectator()) {
 			return InteractionResult.PASS;
@@ -65,14 +70,40 @@ public final class PickaxeTorchPlacement {
 			return InteractionResult.PASS;
 		}
 
-		ItemStack torchStack = findTorchStack(player);
-		if (torchStack.isEmpty()) {
+		ItemStack torchStack = findLooseTorchStack(player);
+		if (!torchStack.isEmpty()) {
+			return placeTorch(player, hand, hitResult, torchStack);
+		}
+
+		if (!isFromContainersAllowed) {
 			return InteractionResult.PASS;
 		}
 
-		// ItemStack.useOn applies adventure-mode rules, then BlockItem picks wall or floor torch,
-		// consumes one (skipped in creative), plays the sound, and fires the placement triggers
-		return torchStack.useOn(new BlockPlaceContext(player, hand, torchStack, hitResult));
+		return placeTorchFromContainers(player, hand, hitResult);
+	}
+
+
+	public static boolean hasLooseTorch(Player player) {
+
+		return !findLooseTorchStack(player).isEmpty();
+	}
+
+
+	// Client-side guess at whether the server could place a torch from a container: a torch shows in a
+	// carried shulker box or bundle, or an ender chest is carried (its contents are only known to the server)
+	public static boolean mayHaveContainerTorch(Player player) {
+
+		if (!isPlainPickaxe(player.getMainHandItem())) {
+			return false;
+		}
+
+		if (CarriedItemSearch.isCarryingEnderChest(player)) {
+			return true;
+		}
+
+		return CarriedItemSearch.getSources(player, CarriedItemSearch.NO_SKIPPED_SLOT, true).stream()
+			.filter(source -> !source.isLooseSlot())
+			.anyMatch(source -> !source.peek(PickaxeTorchPlacement::isPlaceableTorch).isEmpty());
 	}
 
 
@@ -121,8 +152,38 @@ public final class PickaxeTorchPlacement {
 	}
 
 
+	// ItemStack.useOn applies adventure-mode rules, then BlockItem picks wall or floor torch,
+	// consumes one (skipped in creative), plays the sound, and fires the placement triggers
+	private static InteractionResult placeTorch(Player player, InteractionHand hand, BlockHitResult hitResult, ItemStack torchStack) {
+
+		return torchStack.useOn(new BlockPlaceContext(player, hand, torchStack, hitResult));
+	}
+
+
+	// Places a one-torch copy, then takes the real torch out of its container only if the copy was used
+	// up. A failed placement (or creative mode, which uses nothing) leaves the container untouched.
+	private static InteractionResult placeTorchFromContainers(Player player, InteractionHand hand, BlockHitResult hitResult) {
+
+		for (ItemSource source : CarriedItemSearch.getSources(player, CarriedItemSearch.NO_SKIPPED_SLOT, true)) {
+			ItemStack storedTorch = source.peek(PickaxeTorchPlacement::isPlaceableTorch);
+			if (storedTorch.isEmpty()) {
+				continue;
+			}
+
+			ItemStack placedTorch = storedTorch.copyWithCount(1);
+			InteractionResult result = placeTorch(player, hand, hitResult, placedTorch);
+			if (placedTorch.isEmpty()) {
+				source.take(stack -> ItemStack.isSameItemSameComponents(storedTorch, stack), 1);
+			}
+			return result;
+		}
+
+		return InteractionResult.PASS;
+	}
+
+
 	// Off-hand first (so a held torch is the one used), then hotbar, then the rest of the inventory
-	private static ItemStack findTorchStack(Player player) {
+	private static ItemStack findLooseTorchStack(Player player) {
 
 		ItemStack offhandStack = player.getOffhandItem();
 		if (isPlaceableTorch(offhandStack)) {

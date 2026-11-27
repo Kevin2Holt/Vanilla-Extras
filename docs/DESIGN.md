@@ -48,7 +48,8 @@ Feature options (sliders, extra switches) go under `"settings"`, keyed by featur
   "features": { "saturationBeacon": true, "pickaxeTorches": true, "autoRefill": true },
   "settings": {
     "settingsMenu": { "showOptionsScreenButton": false },
-    "autoRefill": { "triggerCount": 8, "refillAmount": 64, "fromContainers": true }
+    "autoRefill": { "triggerCount": 8, "refillAmount": 64, "fromContainers": true },
+    "pickaxeTorches": { "fromContainers": true }
   }
 }
 ```
@@ -82,11 +83,29 @@ Only players with the mod on their client get refills; vanilla clients never sen
 | Amount above trigger | Refill back to `refillAmount`, capped at the max stack size. |
 | Amount at or below trigger | Add `refillAmount` items each time it triggers. |
 | Matching | Stackables need the same item and components. Damageable items (tools, weapons) match by item, so a fresh tool replaces a broken one. |
-| Search order | Hotbar, main inventory, shulker boxes, bundles, then the ender chest if the player carries an ender chest item. |
-| Depth | One layer only. Nothing inside a shulker box, bundle, or the ender chest is opened. |
+| Search order | See "Pulling items from containers" below. |
 | Skipped | Creative and spectator mode, and any change while a screen is open (that is the player rearranging items). |
 
 Other refill mods: the client stands down when another mod's refill is on. It checks Tweakeroo (`tweakHandRestock`) and Inventory Profiles Next (`enable_auto_refill`), first through the running mod (so in-game hotkey toggles count) and then through their config files. Installed with refill off means ours runs. As a second guard, the client waits two ticks after a stack drops before asking, and the server rechecks the stack, so if anything else refilled it first, nothing happens.
+
+## Pulling items from containers
+
+Auto-refill and pickaxe torches share one search, `CarriedItemSearch` (package `com.kevin2holt.vanillaextras.inventory`), so both pull in the same order:
+
+1. Hotbar
+2. Main inventory
+3. Shulker boxes carried in the inventory
+4. Bundles carried in the inventory
+5. The ender chest, if the player carries an ender chest item
+6. "Refill" shulker boxes inside that ender chest
+
+Containers are opened one layer deep. Step 6 is the one exception: a shulker box in the ender chest is searched when its name starts with "Refill" or "Auto-Refill". Matching ignores case and treats spaces, underscores, and hyphens alike, and anything may follow, so "auto_refill", "AutoRefill", and "Refill - Torches" all count. Nothing inside those shulker boxes is opened, and no other container in the ender chest is.
+
+## Pickaxe torches from containers
+
+Setting `settings.pickaxeTorches.fromContainers` (default true, the server's value decides). When the player has no loose torch, the server takes one from the search above (steps 3-6). It places a one-torch copy and removes the real torch from its container only if the copy was used, so a failed placement or creative mode leaves the container alone. Vanilla clients get this too, since the server does all of it.
+
+A modded client can't see the ender chest, so it never predicts these placements. When the server reports the setting on and the client sees a torch in a carried shulker box or bundle, or an ender chest item, it claims the click (arm swing, no off-hand use) and lets the server place the torch and send the sound. The setting reaches modded clients with the enabled-feature list as `pickaxeTorches.fromContainers` (see `FeatureSync.SYNCED_SETTINGS`).
 
 ## Optional client features
 

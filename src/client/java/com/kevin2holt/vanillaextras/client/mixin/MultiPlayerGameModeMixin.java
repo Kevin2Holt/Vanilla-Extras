@@ -3,6 +3,7 @@ package com.kevin2holt.vanillaextras.client.mixin;
 import com.kevin2holt.vanillaextras.client.ServerFeatures;
 import com.kevin2holt.vanillaextras.feature.ModFeatures;
 import com.kevin2holt.vanillaextras.torch.PickaxeTorchPlacement;
+import com.kevin2holt.vanillaextras.torch.PickaxeTorchSettings;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.InteractionHand;
@@ -27,9 +28,19 @@ public abstract class MultiPlayerGameModeMixin {
 			return;
 		}
 
-		InteractionResult placementResult = PickaxeTorchPlacement.tryPlaceTorch(player, hand, hitResult);
+		InteractionResult placementResult = PickaxeTorchPlacement.tryPlaceTorch(player, hand, hitResult, false);
 		if (placementResult != InteractionResult.PASS) {
 			callbackInfo.setReturnValue(placementResult);
+			return;
+		}
+
+		// A torch from a container is placed by the server alone (only it can see the ender chest).
+		// Claiming the click still swings the arm and keeps the off-hand item from being used too.
+		boolean isContainerTorchPossible = hand == InteractionHand.MAIN_HAND && !player.isSpectator()
+			&& ServerFeatures.isEnabledOnServer(PickaxeTorchSettings.FROM_CONTAINERS)
+			&& PickaxeTorchPlacement.mayHaveContainerTorch(player);
+		if (isContainerTorchPossible) {
+			callbackInfo.setReturnValue(InteractionResult.SUCCESS);
 		}
 	}
 }

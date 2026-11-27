@@ -1,7 +1,9 @@
 package com.kevin2holt.vanillaextras.network;
 
+import com.kevin2holt.vanillaextras.config.BooleanSetting;
 import com.kevin2holt.vanillaextras.feature.Feature;
 import com.kevin2holt.vanillaextras.feature.ModFeatures;
+import com.kevin2holt.vanillaextras.torch.PickaxeTorchSettings;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -9,12 +11,18 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // Tells modded clients which client-synced features the server has enabled when they join,
 // and again whenever a synced toggle changes while the server is running (e.g. from the
 // in-game settings menu in singleplayer or LAN)
 public final class FeatureSync {
+	// Server options a modded client needs to know about; sent with the enabled features on join
+	private static final List<BooleanSetting> SYNCED_SETTINGS = List.of(
+		PickaxeTorchSettings.FROM_CONTAINERS
+	);
+
 	private static volatile MinecraftServer runningServer;
 
 
@@ -60,12 +68,26 @@ public final class FeatureSync {
 			return;
 		}
 
-		List<String> enabledFeatureKeys = ModFeatures.ALL_FEATURES.stream()
+		List<String> enabledKeys = new ArrayList<>();
+
+		ModFeatures.ALL_FEATURES.stream()
 			.filter(Feature::isSyncedToClient)
 			.filter(Feature::isEnabled)
 			.map(Feature::configKey)
-			.toList();
+			.forEach(enabledKeys::add);
 
-		ServerPlayNetworking.send(player, new EnabledFeaturesPayload(enabledFeatureKeys));
+		SYNCED_SETTINGS.stream()
+			.filter(BooleanSetting::get)
+			.map(FeatureSync::getSyncKey)
+			.forEach(enabledKeys::add);
+
+		ServerPlayNetworking.send(player, new EnabledFeaturesPayload(enabledKeys));
+	}
+
+
+	// Synced settings share the feature list, as "featureKey.settingKey", so the packet format is unchanged
+	public static String getSyncKey(BooleanSetting setting) {
+
+		return setting.featureKey() + "." + setting.settingKey();
 	}
 }
