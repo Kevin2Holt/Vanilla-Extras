@@ -15,16 +15,15 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Generate sources
-        run: ./gradlew genSources --stacktrace || ./gradlew genSourcesWithVineflower --stacktrace
+      - name: Resolve deps
+        run: ./gradlew dependencies --configuration compileClasspath -q > /dev/null || true
       - name: Dump networking API
         run: |
-          mkdir -p fapi
-          for j in $(find ~/.gradle .gradle -name 'fabric-networking-api-v1*.jar' -o -name 'fabric-lifecycle-events*sources*.jar' 2>/dev/null); do echo "JAR $j"; unzip -o -q "$j" -d fapi || true; done
-          cd fapi
-          find . -name '*.java' | grep -i 'networking/v1' | head -60
-          for f in $(find . -path '*networking/v1/*' \( -name 'PayloadTypeRegistry.java' -o -name 'ServerPlayNetworking.java' -o -name 'ClientPlayNetworking.java' -o -name 'ServerPlayConnectionEvents.java' -o -name 'ClientPlayConnectionEvents.java' \)); do echo "===== $f"; grep -n 'public\|static' "$f" | grep -v '^\s*\*'; done
-          find ~/.gradle -iname '*mixinextras*' | head
-          cd ..; mkdir -p d2; for j in $(find ~/.gradle .gradle -name '*minecraft*sources*.jar' 2>/dev/null); do unzip -o -q "$j" -d d2 || true; done
-          echo "===== CustomPacketPayload"; cat $(find d2 -name CustomPacketPayload.java) | grep -v '^import'
-          echo "===== ByteBufCodecs list/string"; grep -n 'STRING_UTF8\|static .* list(\|collection(' $(find d2 -name ByteBufCodecs.java) | head
+          J=$(find ~/.gradle -name 'fabric-networking-api-v1-*.jar' | grep -v sources | head -1)
+          echo "NETJAR $J"
+          for c in PayloadTypeRegistry ServerPlayNetworking ClientPlayNetworking 'ServerPlayConnectionEvents$Join' 'ClientPlayConnectionEvents$Disconnect' ServerPlayConnectionEvents ClientPlayConnectionEvents 'ClientPlayNetworking$PlayPayloadHandler' 'ClientPlayNetworking$Context'; do
+            cls=$(unzip -l "$J" | awk '{print $4}' | grep -F "/$c.class" | head -1)
+            if [ -n "$cls" ]; then javap -cp "$J" "${cls%.class}"; else echo "missing $c"; fi
+          done
+          L=$(find ~/.gradle -name 'fabric-loader-*.jar' | grep -v sources | head -1); echo "LOADER $L"; unzip -l "$L" | grep -i mixinextras | head -3
+          find ~/.gradle -iname '*mixinextras*.jar' | head -3
