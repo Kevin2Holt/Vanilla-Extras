@@ -8,10 +8,12 @@ public final class ModFeatures {
 	// The beacon effect list is replaced once, when the beacon class loads
 	public static final Feature SATURATION_BEACON = new Feature("saturationBeacon", true, true, true);
 	public static final Feature PICKAXE_TORCHES = new Feature("pickaxeTorches", true, true);
+	public static final Feature AUTO_REFILL = new Feature("autoRefill", true, true);
 
 	public static final List<Feature> ALL_FEATURES = List.of(
 		SATURATION_BEACON,
-		PICKAXE_TORCHES
+		PICKAXE_TORCHES,
+		AUTO_REFILL
 	);
 
 

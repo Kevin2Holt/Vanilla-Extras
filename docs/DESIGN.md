@@ -45,9 +45,10 @@ Feature options (sliders, extra switches) go under `"settings"`, keyed by featur
 
 ```json
 {
-  "features": { "saturationBeacon": true, "pickaxeTorches": true },
+  "features": { "saturationBeacon": true, "pickaxeTorches": true, "autoRefill": true },
   "settings": {
-    "settingsMenu": { "showOptionsScreenButton": false }
+    "settingsMenu": { "showOptionsScreenButton": false },
+    "autoRefill": { "triggerCount": 8, "refillAmount": 64, "fromContainers": true }
   }
 }
 ```
@@ -68,6 +69,24 @@ SettingsMenu.registerPage(Component.literal("Auto-Refill"), page -> {
 Feature names on the toggles screen come from the lang key `vanilla-extras.feature.<configKey>`, falling back to the config key split into words. Toggling a feature from the menu saves the file and, for client-synced features, re-sends the enabled list to modded players on the running integrated server. On a remote server the toggles still edit the client's own file, and the screen says so.
 
 The server's config decides. When a feature changes what a modded client shows (like a new beacon button), mark it `isSyncedToClient` in `ModFeatures`; the server sends its enabled synced features to modded clients on join, and the client only shows the extra option when the server has it on. A modded client's own toggle only matters in singleplayer and LAN hosting.
+
+## Auto-refill
+
+Toggle `features.autoRefill` (live, synced to modded clients). Player preferences live under `settings.autoRefill`: `triggerCount` (0-63, default 8), `refillAmount` (1-64, default 64), and `fromContainers` (default true).
+
+Only players with the mod on their client get refills; vanilla clients never send a request, so nothing changes for them. The client watches the main-hand and off-hand stacks and, when one is used down to the trigger, sends a `vanilla-extras:refill_request` with the item and its settings. The server moves the items, because only it can see inside shulker boxes, bundles, and the ender chest. Items are only ever moved within the requesting player's own inventory, so a forged request cannot create anything.
+
+| Rule | Behavior |
+|---|---|
+| Trigger | Refill once the stack is at or below `triggerCount`. A trigger at or above the item's max stack size refills on every use, back to a full stack. |
+| Amount above trigger | Refill back to `refillAmount`, capped at the max stack size. |
+| Amount at or below trigger | Add `refillAmount` items each time it triggers. |
+| Matching | Stackables need the same item and components. Damageable items (tools, weapons) match by item, so a fresh tool replaces a broken one. |
+| Search order | Hotbar, main inventory, shulker boxes, bundles, then the ender chest if the player carries an ender chest item. |
+| Depth | One layer only. Nothing inside a shulker box, bundle, or the ender chest is opened. |
+| Skipped | Creative and spectator mode, and any change while a screen is open (that is the player rearranging items). |
+
+Other refill mods: the client stands down when another mod's refill is on. It checks Tweakeroo (`tweakHandRestock`) and Inventory Profiles Next (`enable_auto_refill`), first through the running mod (so in-game hotkey toggles count) and then through their config files. Installed with refill off means ours runs. As a second guard, the client waits two ticks after a stack drops before asking, and the server rechecks the stack, so if anything else refilled it first, nothing happens.
 
 ## Optional client features
 
