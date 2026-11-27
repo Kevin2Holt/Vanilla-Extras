@@ -1,0 +1,26 @@
+# Gradle
+.gradle/
+build/
+out/
+classes/
+
+# Loom run directory
+run/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+bin/
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java
+hs_err_*.log
+replay_*.log
