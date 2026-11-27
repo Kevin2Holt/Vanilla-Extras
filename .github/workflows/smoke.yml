@@ -42,4 +42,4 @@ jobs:
             sleep 5
             echo stop
           ) | timeout 600 ./gradlew runServer --args="nogui" 2>&1 | tee server.log || true
-          echo "===== SMOKE"; grep -n 'SMOKE\|Mixin\|mixin\|ERROR\|Exception\|Done (\|beacon\|Beacon\|block data\|Changed\|filled\|Successfully' server.log | head 300
+          echo "===== SMOKE"; grep -n 'SMOKE\|Mixin\|mixin\|ERROR\|Exception\|Done (\|beacon\|Beacon\|block data\|Changed\|filled\|Successfully' server.log | head -60
