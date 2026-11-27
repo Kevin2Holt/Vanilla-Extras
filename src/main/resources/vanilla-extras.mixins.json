@@ -5,6 +5,7 @@
 	"mixins": [
 		"BeaconBlockEntityMixin",
 		"BeaconMenuMixin",
+		"ServerGamePacketListenerImplMixin",
 		"ServerPlayerGameModeMixin"
 	],
 	"injectors": {

@@ -13,11 +13,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-// Saturation as a tier-4 secondary effect, offered only on beacons whose full 4-layer pyramid
-// is built from diamond and/or netherite blocks. There it takes Regeneration's place in the
-// modded beacon screen. Vanilla clients still see Regeneration, which the server keeps accepting.
+// Saturation and Regeneration share the beacon's tier-4 "healing" secondary slot. Which one a
+// beacon gives is decided live from its base each time effects apply: a full 4-layer base made
+// only of diamond and/or netherite blocks gives Saturation, anything else gives Regeneration.
+// Either effect can be stored as the choice (vanilla clients only ever send Regeneration).
 public final class SaturationBeacon {
-	private static final int PYRAMID_LAYERS_REQUIRED = 4;// a secondary effect needs the full pyramid
+	private static final int SECONDARY_LAYERS_REQUIRED = 4;// vanilla only gives a secondary effect at 4 layers
 
 
 	private SaturationBeacon() {
@@ -36,17 +37,39 @@ public final class SaturationBeacon {
 	}
 
 
-	// Whether this beacon may give Saturation right now: feature on and a diamond/netherite pyramid
-	public static boolean isSaturationOffered(Level level, BlockPos beaconPos) {
+	public static boolean isHealingSlotEffect(Holder<MobEffect> effect) {
 
-		return ModFeatures.SATURATION_BEACON.isEnabled() && isSaturationPyramid(level, beaconPos);
+		return MobEffects.REGENERATION.equals(effect) || MobEffects.SATURATION.equals(effect);
 	}
 
 
-	// Checks every block of all 4 layers (9x9, 7x7, 5x5 and 3x3 under the beacon)
-	public static boolean isSaturationPyramid(Level level, BlockPos beaconPos) {
+	// The effect the healing slot gives right now, or the stored effect unchanged for other secondaries
+	public static Holder<MobEffect> resolveSecondaryEffect(Holder<MobEffect> storedSecondary, Level level, BlockPos beaconPos, int levels) {
 
-		for (int layer = 1; layer <= PYRAMID_LAYERS_REQUIRED; layer++) {
+		if (storedSecondary == null || !isHealingSlotEffect(storedSecondary)) {
+			return storedSecondary;
+		}
+
+		boolean isSaturationEarned = ModFeatures.SATURATION_BEACON.isEnabled()
+			&& levels >= SECONDARY_LAYERS_REQUIRED
+			&& isSaturationBase(level, beaconPos, SECONDARY_LAYERS_REQUIRED);
+
+		return isSaturationEarned ? MobEffects.SATURATION : MobEffects.REGENERATION;
+	}
+
+
+	// Whether the beacon screen shows Saturation in place of Regeneration: the base's completed
+	// layers, however many there are, are all diamond and/or netherite
+	public static boolean isSaturationShown(Level level, BlockPos beaconPos, int levels) {
+
+		return ModFeatures.SATURATION_BEACON.isEnabled() && levels >= 1 && isSaturationBase(level, beaconPos, levels);
+	}
+
+
+	// Checks every block of the given number of layers (3x3, 5x5, 7x7, 9x9 going down)
+	public static boolean isSaturationBase(Level level, BlockPos beaconPos, int layerCount) {
+
+		for (int layer = 1; layer <= layerCount; layer++) {
 			int layerY = beaconPos.getY() - layer;
 			if (layerY < level.getMinY()) {
 				return false;
@@ -71,14 +94,14 @@ public final class SaturationBeacon {
 	}
 
 
-	// Tells a modded client which tier-4 option to show; sent just before the beacon screen opens
-	public static void sendBeaconOptions(ServerPlayer player, Level level, BlockPos beaconPos) {
+	// Tells a modded client which healing-slot icon to show; sent just before the beacon screen opens
+	public static void sendBeaconOptions(ServerPlayer player, Level level, BlockPos beaconPos, int levels) {
 
 		// Vanilla clients have not registered the channel, so they are skipped here
 		if (!ServerPlayNetworking.canSend(player, BeaconOptionsPayload.TYPE)) {
 			return;
 		}
 
-		ServerPlayNetworking.send(player, new BeaconOptionsPayload(isSaturationOffered(level, beaconPos)));
+		ServerPlayNetworking.send(player, new BeaconOptionsPayload(isSaturationShown(level, beaconPos, levels)));
 	}
 }

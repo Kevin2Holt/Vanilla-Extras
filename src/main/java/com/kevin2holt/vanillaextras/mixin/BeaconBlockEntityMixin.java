@@ -43,18 +43,18 @@ public abstract class BeaconBlockEntityMixin {
 	}
 
 
-	// Drops a Saturation secondary while the feature is off or the pyramid has non-diamond/netherite blocks
+	@Shadow
+	private int levels;
+
+
+	// Picks Saturation or Regeneration for the healing slot from the base as it is right now
 	@WrapOperation(
 		method = "tick",
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/entity/BeaconBlockEntity;applyEffects(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;ILnet/minecraft/core/Holder;Lnet/minecraft/core/Holder;)V")
 	)
-	private static void skipUnearnedSaturation(Level level, BlockPos beaconPos, int levels, Holder<MobEffect> primaryPower, Holder<MobEffect> secondaryPower, Operation<Void> original) {
+	private static void resolveHealingSlot(Level level, BlockPos beaconPos, int levels, Holder<MobEffect> primaryPower, Holder<MobEffect> secondaryPower, Operation<Void> original) {
 
-		if (secondaryPower != null && SaturationBeacon.isSaturation(secondaryPower) && !SaturationBeacon.isSaturationOffered(level, beaconPos)) {
-			secondaryPower = null;
-		}
-
-		original.call(level, beaconPos, levels, primaryPower, secondaryPower);
+		original.call(level, beaconPos, levels, primaryPower, SaturationBeacon.resolveSecondaryEffect(secondaryPower, level, beaconPos, levels));
 	}
 
 
@@ -63,7 +63,7 @@ public abstract class BeaconBlockEntityMixin {
 
 		BlockEntity beacon = (BlockEntity) (Object) this;
 		if (callbackInfo.getReturnValue() != null && player instanceof ServerPlayer serverPlayer && beacon.getLevel() != null) {
-			SaturationBeacon.sendBeaconOptions(serverPlayer, beacon.getLevel(), beacon.getBlockPos());
+			SaturationBeacon.sendBeaconOptions(serverPlayer, beacon.getLevel(), beacon.getBlockPos(), this.levels);
 		}
 	}
 }

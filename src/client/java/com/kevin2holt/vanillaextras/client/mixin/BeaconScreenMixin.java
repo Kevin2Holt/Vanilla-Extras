@@ -11,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import java.util.List;
 
-// Builds the beacon buttons from what the server said about this beacon. Saturation replaces
-// Regeneration only when the server reported a diamond/netherite pyramid; anywhere else the
-// screen matches vanilla, so a pick can never fail the server's check and kick the player.
+// Builds the beacon buttons from what the server said about this beacon: Saturation's icon takes
+// Regeneration's place when every block of the base is diamond and/or netherite. Both share one
+// slot on the server, so either pick is always accepted.
 @Mixin(BeaconScreen.class)
 public abstract class BeaconScreenMixin {
 
