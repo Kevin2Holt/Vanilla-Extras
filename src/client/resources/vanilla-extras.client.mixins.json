@@ -2,7 +2,9 @@
 	"required": true,
 	"package": "com.kevin2holt.vanillaextras.client.mixin",
 	"compatibilityLevel": "JAVA_25",
-	"client": [],
+	"client": [
+		"BeaconScreenMixin"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	}

@@ -8,5 +8,6 @@ public class VanillaExtrasClient implements ClientModInitializer {
 	public void onInitializeClient() {
 
 		// Client-only setup (renderers, keybinds, screens) goes here
+		ServerFeatures.register();
 	}
 }
