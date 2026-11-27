@@ -24,6 +24,22 @@ A vanilla client only knows vanilla registries, packets, and assets. Anything th
 | Use vanilla commands, chat, titles, boss bars, scoreboards, and display entities for UI | Open custom screens or GUIs on a vanilla client |
 | Put client-only polish under `src/client`, gated on the server having the mod | Make the server depend on anything in `src/client` |
 
+## Every feature has a config toggle
+
+Each feature must be switchable on and off in `config/vanilla-extras.json`. The file is created on first launch and lists every feature under `"features"` with its current value:
+
+```json
+{
+  "features": {
+    "saturationBeacon": true
+  }
+}
+```
+
+Declare each feature once in `ModFeatures` (package `com.kevin2holt.vanillaextras.feature`) and check it with `ModFeatures.<FEATURE>.isEnabled()`. The config loads lazily, so it is safe to call from mixins that run during class initialization. Missing keys are written back with their default; a file that fails to parse is left untouched and defaults are used. Toggles are read once at startup, so changes need a restart.
+
+The server's config decides. When a feature changes what a modded client shows (like a new beacon button), mark it `isSyncedToClient` in `ModFeatures`; the server sends its enabled synced features to modded clients on join, and the client only shows the extra option when the server has it on. A modded client's own toggle only matters in singleplayer and LAN hosting.
+
 ## Optional client features
 
 When both sides have the mod, they can exchange custom packets. Use Fabric Networking API payloads and check `ServerPlayNetworking.canSend(player, TYPE)` before sending anything custom, so a vanilla client never receives a packet it can't decode.
