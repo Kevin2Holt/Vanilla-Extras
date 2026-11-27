@@ -3,7 +3,7 @@
 	"id": "vanilla-extras",
 	"version": "${version}",
 	"name": "Vanilla Extras",
-	"description": "Vanilla-style additions to Minecraft.",
+	"description": "Vanilla-compatible additions: works on servers without requiring the mod on clients.",
 	"authors": [
 		"Kevin2Holt"
 	],
