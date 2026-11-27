@@ -22,7 +22,8 @@ public final class AutoRefillSettingsPage {
 	private static final Component CONTAINERS_LABEL = Component.literal("Pull from containers");
 	private static final Component CONTAINERS_TOOLTIP = Component.literal(
 		"Also take items from shulker boxes and bundles in your inventory, and from your ender chest "
-		+ "if you carry one. Only one layer deep: nothing inside those is opened.");
+		+ "if you carry one. Only one layer deep, except shulker boxes in the ender chest named "
+		+ "\"Refill...\" or \"Auto-Refill...\", which are searched too.");
 
 
 	private AutoRefillSettingsPage() {

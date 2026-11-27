@@ -3,6 +3,7 @@ package com.kevin2holt.vanillaextras.mixin;
 import com.kevin2holt.vanillaextras.feature.ModFeatures;
 import com.kevin2holt.vanillaextras.network.EnabledFeaturesPayload;
 import com.kevin2holt.vanillaextras.torch.PickaxeTorchPlacement;
+import com.kevin2holt.vanillaextras.torch.PickaxeTorchSettings;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,16 +33,21 @@ public abstract class ServerPlayerGameModeMixin {
 		}
 
 		BlockPos placementPos = PickaxeTorchPlacement.getPlacementPos(player, hand, hitResult);
-		InteractionResult placementResult = PickaxeTorchPlacement.tryPlaceTorch(player, hand, hitResult);
+		boolean isFromLooseTorch = PickaxeTorchPlacement.hasLooseTorch(player);
+		InteractionResult placementResult = PickaxeTorchPlacement.tryPlaceTorch(player, hand, hitResult, PickaxeTorchSettings.FROM_CONTAINERS.get());
 		if (placementResult == InteractionResult.PASS) {
 			return;
 		}
 
-		// A modded client predicted this placement itself (sound and arm swing included).
-		// A vanilla client did not, so the server swings the arm and plays the sound for it.
+		// A modded client predicted a placement from a loose torch itself (sound and arm swing included).
+		// A vanilla client predicted nothing, and a modded client never predicts a torch taken from a
+		// container, so those get the sound from the server; a vanilla client also gets the arm swing.
 		boolean isClientModded = ServerPlayNetworking.canSend(player, EnabledFeaturesPayload.TYPE);
-		if (!isClientModded && placementResult.consumesAction()) {
+		boolean isPredictedByClient = isClientModded && isFromLooseTorch;
+		if (!isPredictedByClient && placementResult.consumesAction()) {
 			PickaxeTorchPlacement.sendPlaceSoundToPlayer(player, placementPos);
+		}
+		if (!isClientModded && placementResult.consumesAction()) {
 			placementResult = InteractionResult.SUCCESS_SERVER;
 		}
 
